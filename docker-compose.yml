@@ -1,0 +1,8 @@
+
+services:
+  web:
+    image: caddy:2.10-alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/usr/share/caddy

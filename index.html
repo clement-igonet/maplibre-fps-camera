@@ -28,7 +28,7 @@
   <div id="map"></div>
   <script src="https://unpkg.com/maplibre-gl@5.4.0/dist/maplibre-gl.js"></script>
   <script type="module">
-    import { FPSCameraControl } from './FPSCameraControl.js';
+    import { FPSHandler } from './fps_handler.js';
     const map = new maplibregl.Map({
           container: 'map',
           style: {
@@ -65,6 +65,8 @@
           zoom: 20,
           pitch: 40,
           maxPitch: 80,
+          maxZoom: 25,
+          minZoom: 0,
           bearing: 20,
           canvasContextAttributes: {antialias: true}
       });
@@ -75,6 +77,7 @@
               // https://gist.github.com/ryanbaumann/a7d970386ce59d11c16278b90dde094d
               'type': 'geojson',
               'data': 'https://maplibre.org/maplibre-gl-js/docs/assets/indoor-3d-map.geojson'
+            //   'data': './indoor-3d-map.geojson'
           });
           map.addLayer({
               'id': 'room-extrusion',
@@ -97,10 +100,12 @@
                   'fill-extrusion-opacity': 0.5
               }
           });
-          const fps = new FPSCameraControl(map, { altitude: 1.8 });
-          fps.onAdd(map); // manual "add" for now (we're not using `map.addControl()`)
+
+          const fpsHandler = new FPSHandler(map);
+          // fps.onAdd(map); // manual "add" for now (we're not using `map.addControl()`)
+
           document.getElementById('enter-fps').onclick = () => {
-            fps.enable();
+            fpsHandler.enable();
           };
       });
   </script>

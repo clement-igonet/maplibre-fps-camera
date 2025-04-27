@@ -45,10 +45,43 @@ export class FPSHandler {
     // console.info('getCameraOptions: ', JSON.stringify(this.camera.getCameraOptions(this.map), null, 2));
   };
 
+  // _onMouseMove = (e) => {
+  //   if (!this.active) return;
+  //   this.camera.rotate(e.movementX, e.movementY);
+  // };
+
   _onMouseMove = (e) => {
     if (!this.active) return;
+  
+    const maxPitch = 80;
+    const minPitch = 70;
+    const pitchDelta = -e.movementY * this.camera.sensitivity; // Mouse Y movement
+  
+    // console.info('this.camera.pitch: ', this.camera.pitch)
+    const wasAtLimit =
+      (this.camera.pitch === maxPitch && pitchDelta > 0) ||
+      (this.camera.pitch === minPitch && pitchDelta < 0);
+  
     this.camera.rotate(e.movementX, e.movementY);
+  
+    if (wasAtLimit) {
+      let speedFactor = pitchDelta; // keep sign!
+  
+      // Clamp the speed factor to avoid crazy fast movement
+      speedFactor = Math.max(-10, Math.min(10, speedFactor));
+  
+      this._moveBasedOnMouse(speedFactor);
+    }
   };
+  
+  _moveBasedOnMouse(speedFactor) {
+    const baseSpeedMetersPerSecond = 20;
+    const frameTimeSeconds = 1 / 60;
+  
+    const distance = baseSpeedMetersPerSecond * speedFactor * frameTimeSeconds;
+  
+    this.camera.move(distance, 0);
+  }
 
   _onKeyDown = (e) => {
     const key = e.key;
@@ -89,7 +122,9 @@ export class FPSHandler {
   
     return false; // no collision
   }
-  
+
+
+
   _loop() {
     if (!this.active) return;
 

@@ -10,7 +10,7 @@ export class FPSCamera {
   rotate(deltaX, deltaY) {
     this.bearing += deltaX * this.sensitivity;
     this.pitch -= deltaY * this.sensitivity;
-    this.pitch = Math.max(60, Math.min(80, this.pitch));
+    this.pitch = Math.max(70, Math.min(80, this.pitch));
     this.bearing = (this.bearing + 360) % 360;
   }
 

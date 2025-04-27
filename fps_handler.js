@@ -2,13 +2,9 @@
 import { FPSCamera } from './fps_camera.js';
 
 export class FPSHandler {
-  constructor(map) {
+  constructor(map, position) {
     this.map = map;
-    this.camera = new FPSCamera({
-      lat: map.getCenter().lat,
-      lng: map.getCenter().lng,
-      alt: 25
-    });
+    this.camera = new FPSCamera(position);
 
     this.active = false;
     this.keys = new Set();
@@ -19,16 +15,29 @@ export class FPSHandler {
     if (this.active) return;
     this.active = true;
 
-    this.map.getCanvas().requestPointerLock();
+    this.map.getCanvas().requestPointerLock()
+    .catch((err) => {
+      console.warn('Pointer lock request failed:', err);
+      this.disable(); // Optional: auto-disable FPS mode if lock failed
+    });
+    
     this.map.dragPan.disable();
 
     document.addEventListener('mousedown', this._onMouseDown);
     document.addEventListener('mousemove', this._onMouseMove);
     document.addEventListener('keydown', this._onKeyDown);
     document.addEventListener('keyup', this._onKeyUp);
+    // document.addEventListener('keydown', this._onEscape);
 
     this._loop();
   }
+
+  _onEscape = (e) => {
+    if (e.key === 'Escape') {
+      this.disable();
+      console.log('Exited FPS mode.');
+    }
+  };
 
   _onMouseDown = (e) => {
     if (!this.active) return;
@@ -122,11 +131,21 @@ export class FPSHandler {
 
   disable() {
     this.active = false;
-    document.exitPointerLock?.();
+    // document.exitPointerLock?.();
+    if (document.pointerLockElement) {
+      document.exitPointerLock();
+    }
     this.map.dragPan.enable();
 
     document.removeEventListener('mousemove', this._onMouseMove);
     document.removeEventListener('keydown', this._onKeyDown);
     document.removeEventListener('keyup', this._onKeyUp);
+  }
+  toggle() {
+    if (this.active) {
+      this.disable();
+    } else {
+      this.enable();
+    }
   }
 }

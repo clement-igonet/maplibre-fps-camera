@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <title>Extrude polygons for 3D indoor mapping</title>
     <meta property="og:description" content="Create a 3D indoor map with the fill-extrude-height paint property." />
@@ -8,106 +9,149 @@
     <link rel='stylesheet' href='https://unpkg.com/maplibre-gl@5.4.0/dist/maplibre-gl.css' />
     <!-- <script src='https://unpkg.com/maplibre-gl@5.4.0/dist/maplibre-gl.js'></script> -->
     <style>
-        body { margin: 0; padding: 0; }
-        html, body, #map { height: 100%; }
-        #enter-fps {
-          position: absolute;
-          top: 10px;
-          left: 10px;
-          z-index: 1;
-          padding: 10px 16px;
-          background: white;
-          border: 1px solid #ccc;
-          cursor: pointer;
-          font-family: sans-serif;
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body,
+        #map {
+            height: 100%;
+        }
+
+        #fps-button {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1;
+            padding: 10px 16px;
+            background: white;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            font-family: sans-serif;
         }
     </style>
 </head>
+
 <body>
-  <button id="enter-fps">Enter FPS Look</button>
-  <div id="map"></div>
-  <script src="https://unpkg.com/maplibre-gl@5.4.0/dist/maplibre-gl.js"></script>
-  <script type="module">
-    import { FPSHandler } from './fps_handler.js';
-    const map = new maplibregl.Map({
-          container: 'map',
-          style: {
-              'id': 'raster',
-              'version': 8,
-              'name': 'Raster tiles',
-              'center': [0, 0],
-              'zoom': 0,
-              'sources': {
-                  'raster-tiles': {
-                      'type': 'raster',
-                      'tiles': ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-                      'tileSize': 256,
-                      'minzoom': 0,
-                      'maxzoom': 19
-                  }
-              },
-              'layers': [
-                  {
-                      'id': 'background',
-                      'type': 'background',
-                      'paint': {
-                          'background-color': '#e0dfdf'
-                      }
-                  },
-                  {
-                      'id': 'simple-tiles',
-                      'type': 'raster',
-                      'source': 'raster-tiles'
-                  }
-              ]
-          },
-          center: [-87.61694, 41.86625],
-          zoom: 20,
-          pitch: 40,
-          maxPitch: 80,
-          maxZoom: 25,
-          minZoom: 0,
-          bearing: 20,
-          canvasContextAttributes: {antialias: true}
-      });
+    <button id="fps-button">Enter FPS Look</button>
+    <div id="map"></div>
+    <script src="https://unpkg.com/maplibre-gl@5.4.0/dist/maplibre-gl.js"></script>
+    <script type="module">
+        import { FPSHandler } from './fps_handler.js';
+        import { FPSControlButton } from './fps_component.js';
+        const map = new maplibregl.Map({
+            container: 'map',
+            hash: true, // <-- enable hash tracking!
+            style: {
+                'id': 'raster',
+                'version': 8,
+                'projection': {
+                    'type': 'globe'
+                },
+                'name': 'Raster tiles',
+                'center': [0, 0],
+                'zoom': 0,
+                'sources': {
+                    'raster-tiles': {
+                        'type': 'raster',
+                        'tiles': ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                        'tileSize': 256,
+                        'minzoom': 0,
+                        'maxzoom': 19
+                    }
+                },
+                'layers': [
+                    {
+                        'id': 'background',
+                        'type': 'background',
+                        'paint': {
+                            'background-color': '#e0dfdf'
+                        }
+                    },
+                    {
+                        'id': 'simple-tiles',
+                        'type': 'raster',
+                        'source': 'raster-tiles'
+                    }
+                ]
+            },
+            center: [-87.61694, 41.86625],
+            zoom: 20,
+            pitch: 40,
+            maxPitch: 80,
+            maxZoom: 25,
+            minZoom: 0,
+            bearing: 20,
+            canvasContextAttributes: { antialias: true }
+        });
 
-      map.on('load', () => {
-          map.addSource('floorplan', {
-              // GeoJSON Data source used in vector tiles, documented at
-              // https://gist.github.com/ryanbaumann/a7d970386ce59d11c16278b90dde094d
-              'type': 'geojson',
-              'data': 'https://maplibre.org/maplibre-gl-js/docs/assets/indoor-3d-map.geojson'
-            //   'data': './indoor-3d-map.geojson'
-          });
-          map.addLayer({
-              'id': 'room-extrusion',
-              'type': 'fill-extrusion',
-              'source': 'floorplan',
-              'paint': {
-                  // See the MapLibre Style Specification for details on data expressions.
-                  // https://maplibre.org/maplibre-style-spec/expressions/
+        map.on('load', () => {
+            map.addSource('floorplan', {
+                // GeoJSON Data source used in vector tiles, documented at
+                // https://gist.github.com/ryanbaumann/a7d970386ce59d11c16278b90dde094d
+                'type': 'geojson',
+                'data': 'https://maplibre.org/maplibre-gl-js/docs/assets/indoor-3d-map.geojson'
+                //   'data': './indoor-3d-map.geojson'
+            });
+            map.addLayer({
+                'id': 'room-extrusion',
+                'type': 'fill-extrusion',
+                'source': 'floorplan',
+                'paint': {
+                    // See the MapLibre Style Specification for details on data expressions.
+                    // https://maplibre.org/maplibre-style-spec/expressions/
 
-                  // Get the fill-extrusion-color from the source 'color' property.
-                  'fill-extrusion-color': ['get', 'color'],
+                    // Get the fill-extrusion-color from the source 'color' property.
+                    'fill-extrusion-color': ['get', 'color'],
 
-                  // Get fill-extrusion-height from the source 'height' property.
-                  'fill-extrusion-height': ['get', 'height'],
+                    // Get fill-extrusion-height from the source 'height' property.
+                    'fill-extrusion-height': ["/", ['get', 'height'], 10],
+                    // Get fill-extrusion-base from the source 'base_height' property.
+                    'fill-extrusion-base': ["/", ['get', 'base_height'], 10],
 
-                  // Get fill-extrusion-base from the source 'base_height' property.
-                  'fill-extrusion-base': ['get', 'base_height'],
+                    // Make extrusions slightly opaque for see through indoor walls.
+                    'fill-extrusion-opacity': 0.5
+                }
+            });
 
-                  // Make extrusions slightly opaque for see through indoor walls.
-                  'fill-extrusion-opacity': 0.5
-              }
-          });
-
-          const fpsHandler = new FPSHandler(map);
-          // fps.onAdd(map); // manual "add" for now (we're not using `map.addControl()`)
-
-          document.getElementById('enter-fps').onclick = () => {
+            // const fpsButton = document.getElementById('fps-button');
+            const fpsHandler = new FPSHandler(map, {
+                lat: map.getCenter().lat,
+                lng: map.getCenter().lng,
+                alt: 1.8
+            });
+            const fpsControlButton = new FPSControlButton(fpsHandler);
+            // Start directly in FPS mode
             fpsHandler.enable();
-          };
-      });
-  </script>
+            fpsControlButton.updateLabel(); // Make sure button shows "Exit FPS Look"
+            
+            // Add pointerlockchange listener
+            document.addEventListener('pointerlockchange', () => {
+                if (fpsHandler.active && !document.pointerLockElement) {
+                    fpsHandler.disable();
+                    fpsControlButton.updateLabel(); // (optional) update button text back to "Enter FPS Look"
+                }
+            });
+
+            // fpsButton.addEventListener('click', () => {
+            //     if (!fpsHandler.active) {
+            //         fpsHandler.enable();
+            //         fpsButton.textContent = 'Exit FPS Look';
+            //     } else {
+            //         fpsHandler.disable();
+            //         fpsButton.textContent = 'Enter FPS Look';
+            //     }
+            // });
+
+            // fps.onAdd(map); // manual "add" for now (we're not using `map.addControl()`)
+
+            // document.getElementById('enter-fps').onclick = () => {
+            //     fpsHandler.enable();
+            // };
+        });
+    </script>
 </body>
+
 </html>
